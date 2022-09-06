@@ -7,8 +7,6 @@ kubectl create secret generic flussonic-license --from-literal=license_key="${li
 
 echo $(kubectl get secret flussonic-license -o jsonpath='{.data.license_key}' | base64 --decode)
 
-exit
-
 doctl kubernetes cluster create publish-01 --count 1 --region ams3
 
 kubectl apply -f ./publish.yaml
