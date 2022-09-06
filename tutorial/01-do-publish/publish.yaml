@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: in-api-call-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: in-api-call-role
+rules:
+- apiGroups: [""]
+  resources:
+  - pods
+  - pods/log
+  verbs:
+  - get
+  - list
+- apiGroups: [""]
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - update
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: in-api-call-rb
+subjects:
+  - kind: ServiceAccount
+    name: in-api-call-sa
+roleRef:
+  kind: Role
+  name: in-api-call-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: streamer-presets
+data:
+  ports: |
+    rtmp 1935;
+  vod: |
+    file vod {
+      storage /opt/flussonic/priv;
+    }
+  publish: |
+    template pub {
+      prefix pub;
+      url publish://;
+    }
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: test-secret
+data:
+# root:password
+  edit_auth: cm9vdDpwYXNzd29yZA==
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: flussonic
+spec:
+  serviceName: flussonic
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flussonic
+  template:
+    metadata:
+      labels:
+        app: flussonic
+    spec:
+      serviceAccountName: in-api-call-sa
+      containers:
+      - name: flussonic
+        image: flussonic/flussonic:v22.09-22
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+          name: http
+        - containerPort: 1935
+          name: rtmp
+        env:
+        - name: LICENSE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: flussonic-license
+              key: license_key
+              optional: false
+        - name: FLUSSONIC_SECRETS_STORAGE
+          value: "k8s://test-secret"
+        - name: FLUSSONIC_HTTP
+          value: "80"
+        - name: FLUSSONIC_EDIT_AUTH
+          valueFrom:
+            secretKeyRef:
+              name: test-secret
+              key: edit_auth
+              optional: false
+        volumeMounts:
+        - name: config-templates
+          mountPath: /etc/flussonic/flussonic.conf.d
+        livenessProbe:
+          httpGet:
+            path: /flussonic/api/v3/monitoring/liveness
+            port: 80
+            httpHeaders:
+            - name: Authorization
+              value: Bearer cm9vdDpwYXNzd29yZA==
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        startupProbe:
+          httpGet:
+            path: /flussonic/api/v3/monitoring/readiness
+            port: 80
+            httpHeaders:
+            - name: Authorization
+              value: Bearer cm9vdDpwYXNzd29yZA==
+          initialDelaySeconds: 3
+          periodSeconds: 3
+          failureThreshold: 30
+        readinessProbe:
+          httpGet:
+            path: /flussonic/api/v3/monitoring/readiness
+            port: 80
+            httpHeaders:
+            - name: Authorization
+              value: Bearer cm9vdDpwYXNzd29yZA==
+          initialDelaySeconds: 3
+          periodSeconds: 3
+
+      volumes:
+      - name: config-templates
+        configMap:
+          name: streamer-presets
+          items:
+          - key: ports
+            path: ports.conf
+          - key: vod
+            path: vod.conf
+          - key: publish
+            path: publish.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flussonic
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-size-unit: "1"
+    service.beta.kubernetes.io/do-loadbalancer-disable-lets-encrypt-dns-records: "false"
+spec:
+  type: LoadBalancer
+  selector:
+    app: flussonic
+  ports:
+  - port: 80
+    name: http
+    targetPort: http
+  - port: 1935
+    name: rtmp
+    targetPort: rtmp
