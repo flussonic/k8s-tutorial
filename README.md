@@ -9,5 +9,6 @@ This may be a simple task, but complexity will grow very quickly.
 
 We will try to help with this.
 
-* [Trivial publish example](tutorial/01-do-publish/README.md)
+* [Trivial publish example](tutorial/01-publish/README.md)
+* [Clustering publish example](tutorial/02-load-balance/README.md)
 
