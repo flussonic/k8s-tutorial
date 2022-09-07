@@ -152,10 +152,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: flussonic
+  name: publish-01
   annotations:
-    service.beta.kubernetes.io/do-loadbalancer-size-unit: "1"
-    service.beta.kubernetes.io/do-loadbalancer-disable-lets-encrypt-dns-records: "false"
+    service.beta.kubernetes.io/do-loadbalancer-name: "publish-01"
 spec:
   type: LoadBalancer
   selector:
