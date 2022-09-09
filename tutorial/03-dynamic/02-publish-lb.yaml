@@ -41,6 +41,8 @@ spec:
               name: flussonic-license
               key: license_key
               optional: false
+        - name: FLUSSONIC_CONFIG_EXTERNAL
+          value: "http://konfig.default.svc.cluster.local/publish"
         - name: FLUSSONIC_SECRETS_STORAGE
           value: "k8s://test-secret"
         - name: FLUSSONIC_HTTP
@@ -90,17 +92,13 @@ spec:
           items:
           - key: rtmp
             path: rtmp.conf
-          - key: publish
-            path: publish.conf
-          - key: cluster_key
-            path: cluster_key.conf
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: ingress
   annotations:
-    service.beta.kubernetes.io/do-loadbalancer-name: "ingress-publish-lb-02"
+    service.beta.kubernetes.io/do-loadbalancer-name: "ingress-dynamic-03"
 spec:
   type: LoadBalancer
   selector:

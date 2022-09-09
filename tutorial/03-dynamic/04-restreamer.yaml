@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: publish
+  name: restreamer
 spec:
-  serviceName: publish
+  serviceName: restreamer
   podManagementPolicy: Parallel
   replicas: 2
   selector:
     matchLabels:
-      app: publish
+      app: restreamer
   template:
     metadata:
       labels:
-        app: publish
+        app: restreamer
     spec:
       affinity:
         podAntiAffinity:
@@ -22,7 +22,7 @@ spec:
               - key: app
                 operator: In
                 values:
-                - publish
+                - restreamer
             topologyKey: "kubernetes.io/hostname"
       serviceAccountName: in-api-call-sa
       containers:
@@ -41,6 +41,8 @@ spec:
               name: flussonic-license
               key: license_key
               optional: false
+        - name: FLUSSONIC_CONFIG_EXTERNAL
+          value: "http://konfig.default.svc.cluster.local/restreamer"
         - name: FLUSSONIC_SECRETS_STORAGE
           value: "k8s://test-secret"
         - name: FLUSSONIC_HTTP
@@ -51,9 +53,6 @@ spec:
               name: test-secret
               key: edit_auth
               optional: false
-        volumeMounts:
-        - name: config-templates
-          mountPath: /etc/flussonic/flussonic.conf.d
         livenessProbe:
           httpGet:
             path: /flussonic/api/v3/monitoring/liveness
@@ -82,33 +81,28 @@ spec:
               value: Bearer cm9vdDpwYXNzd29yZA==
           initialDelaySeconds: 3
           periodSeconds: 3
-
-      volumes:
-      - name: config-templates
-        configMap:
-          name: streamer-presets
-          items:
-          - key: rtmp
-            path: rtmp.conf
-          - key: publish
-            path: publish.conf
-          - key: cluster_key
-            path: cluster_key.conf
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ingress
+  name: egress
   annotations:
-    service.beta.kubernetes.io/do-loadbalancer-name: "ingress-publish-lb-02"
+
+    # https://docs.digitalocean.com/products/kubernetes/how-to/configure-load-balancers/
+    service.beta.kubernetes.io/do-loadbalancer-name: "egress-dynamic-03"
+    service.beta.kubernetes.io/do-loadbalancer-enable-backend-keepalive: "true"
+    service.beta.kubernetes.io/do-loadbalancer-healthcheck-path: "/flussonic/api/whoami"
+    service.beta.kubernetes.io/do-loadbalancer-healthcheck-protocol: "http"
+    service.beta.kubernetes.io/do-loadbalancer-protocol: "http"
+    service.beta.kubernetes.io/do-loadbalancer-sticky-sessions-type: "cookies"
+    service.beta.kubernetes.io/do-loadbalancer-sticky-sessions-cookie-name: "player"
+    service.beta.kubernetes.io/do-loadbalancer-sticky-sessions-cookie-ttl: "60"
 spec:
   type: LoadBalancer
+  externalTrafficPolicy: Local
   selector:
-    app: publish
+    app: restreamer
   ports:
-  - port: 1935
-    name: rtmp
-    targetPort: rtmp
   - port: 80
     name: http
     targetPort: http

@@ -1,0 +1,12 @@
+{
+  "name": "konfig",
+  "version": "1.0.1",
+  "description": "Demo configuration server",
+  "main": "index.js",
+  "license": "EULA",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "mongodb": "^3.6.2",
+    "express": "~4.17.0"
+  }
+}
