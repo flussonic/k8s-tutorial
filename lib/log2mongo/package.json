@@ -1,0 +1,19 @@
+{
+  "name": "log2mongo",
+  "description": "K8S flussonic to mongodb logger",
+  "version": "v1.0.0",
+  "main": "logger.mjs",
+  "license": "Apache-2.0",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
+  "dependencies": {
+    "chokidar": "^3.4.2",
+    "globby": "^13.1.2",
+    "mongodb": "^3.6.2",
+    "yarn": "^1.22.19"
+  }
+}
