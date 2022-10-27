@@ -1,6 +1,9 @@
 Quickstart
 ==========
 
+This tutorial shows StatefulSet example
+
+
 
 
 ```
@@ -11,7 +14,7 @@ Validating token... OK
 
 
 
-$ ./start.sh
+$ ./do-start.sh
 Notice: Cluster is provisioning, waiting for cluster to be running
 ....................................................................
 Notice: Cluster created, fetching credentials
@@ -46,6 +49,6 @@ service/flussonic    LoadBalancer   10.245.165.235   132.45.123.101   80:31626/T
 open http://132.45.123.101/
 
 ```
-./stop.sh
+./do-stop.sh
 ```
 
