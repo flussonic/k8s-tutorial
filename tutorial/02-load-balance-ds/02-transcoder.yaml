@@ -1,93 +1,39 @@
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: in-api-call-sa
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: in-api-call-role
-rules:
-- apiGroups: [""]
-  resources:
-  - pods
-  - pods/log
-  verbs:
-  - get
-  - list
-- apiGroups: [""]
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - update
-  - create
-  - patch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: in-api-call-rb
-subjects:
-  - kind: ServiceAccount
-    name: in-api-call-sa
-roleRef:
-  kind: Role
-  name: in-api-call-role
-  apiGroup: rbac.authorization.k8s.io
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: streamer-presets
-data:
-  ports: |
-    rtmp 1935;
-  vod: |
-    file vod {
-      storage /opt/flussonic/priv;
-    }
-  publish: |
-    template pub {
-      prefix pub;
-      url publish://;
-    }
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: test-secret
-data:
-# root:password
-  edit_auth: cm9vdDpwYXNzd29yZA==
----
 apiVersion: apps/v1
-kind: DaemonSet
+kind: StatefulSet
 metadata:
-  name: flussonic
+  name: transcoder
 spec:
+  serviceName: transcoder
+  podManagementPolicy: Parallel
+  replicas: 2
   selector:
     matchLabels:
-      app: flussonic
+      app: transcoder
   template:
     metadata:
       labels:
-        app: flussonic
+        app: transcoder
     spec:
+      nodeSelector:
+        cloud.flussonic.com/transcoder: "true"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - transcoder
+            topologyKey: "kubernetes.io/hostname"
       serviceAccountName: in-api-call-sa
-      hostNetwork: true
       containers:
       - name: flussonic
         image: flussonic/flussonic:v22.10-124
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
-          hostPort: 80
           name: http
-        - containerPort: 1935
-          hostPort: 1935
-          name: rtmp
         env:
         - name: LICENSE_KEY
           valueFrom:
@@ -142,9 +88,22 @@ spec:
         configMap:
           name: streamer-presets
           items:
-          - key: ports
-            path: ports.conf
-          - key: vod
-            path: vod.conf
-          - key: publish
-            path: publish.conf
+          - key: transcoder
+            path: transcoder.conf
+          - key: cluster_key
+            path: cluster_key.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: transcoder
+  labels:
+    app: transcoder
+spec:
+  ports:
+  - port: 80
+    name: transcoder
+  clusterIP: None
+  selector:
+    app: transcoder
+
