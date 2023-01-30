@@ -14,8 +14,6 @@ spec:
       labels:
         app: transcoder
     spec:
-      nodeSelector:
-        cloud.flussonic.com/transcoder: "true"
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -29,7 +27,7 @@ spec:
       serviceAccountName: in-api-call-sa
       containers:
       - name: flussonic
-        image: flussonic/flussonic:v22.10-124
+        image: flussonic/flussonic:v22.09-49
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
@@ -41,6 +39,8 @@ spec:
               name: flussonic-license
               key: license_key
               optional: false
+        - name: FLUSSONIC_CONFIG_EXTERNAL
+          value: "http://konfig.default.svc.cluster.local/transcoder"
         - name: FLUSSONIC_SECRETS_STORAGE
           value: "k8s://test-secret"
         - name: FLUSSONIC_HTTP
@@ -51,9 +51,6 @@ spec:
               name: test-secret
               key: edit_auth
               optional: false
-        volumeMounts:
-        - name: config-templates
-          mountPath: /etc/flussonic/flussonic.conf.d
         livenessProbe:
           httpGet:
             path: /flussonic/api/v3/monitoring/liveness
@@ -82,16 +79,6 @@ spec:
               value: Bearer cm9vdDpwYXNzd29yZA==
           initialDelaySeconds: 3
           periodSeconds: 3
-
-      volumes:
-      - name: config-templates
-        configMap:
-          name: streamer-presets
-          items:
-          - key: transcoder
-            path: transcoder.conf
-          - key: cluster_key
-            path: cluster_key.conf
 ---
 apiVersion: v1
 kind: Service

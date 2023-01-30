@@ -31,11 +31,6 @@ multipass exec rs2 -- sudo /bin/sh -c "curl -sfL https://get.k3s.io | K3S_URL=ht
 multipass exec k3s sudo cat /etc/rancher/k3s/k3s.yaml |sed "s/127.0.0.1/${plane_ip}/" > k3s.yaml
 export KUBECONFIG=`pwd`/k3s.yaml
 
-# cp ~/.kube/config ~/.kube/config.bak && \
-# KUBECONFIG=~/.kube/config:k3s.yaml kubectl config view --flatten > /tmp/config && \
-# mv /tmp/config ~/.kube/config && \
-# rm -f k3s.yaml
-
 kubectl label nodes pub1 cloud.flussonic.com/publish=true
 kubectl label nodes pub2 cloud.flussonic.com/publish=true
 kubectl label nodes tc1 cloud.flussonic.com/transcoder=true
@@ -44,20 +39,19 @@ kubectl label nodes rs1 cloud.flussonic.com/egress=true
 kubectl label nodes rs2 cloud.flussonic.com/egress=true
 
 kubectl create secret generic flussonic-license --from-literal=license_key="${license_key}"
+kubectl create secret generic mongo-logging --from-literal=dsn="mongodb://flus:sonic@mongo.default.svc.cluster.local:27017/flussonic?authSource=admin"
 
-
+kubectl apply -f ../../lib/log2mongo/daemonset.yaml
 kubectl apply -f 00-secrets.yaml
-kubectl apply -f 01-publish.yaml
-kubectl apply -f 02-transcoder.yaml
-kubectl apply -f 03-restreamer.yaml
 
+#kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/master/deploy/longhorn.yaml
+#kubectl create -f 01-longhorn-pvc.yaml
+#kubectl create -f 01-longhorn-pod.yaml
 
-pub1_ip=$(multipass info pub1 | grep -i ip | awk '{print $2}')
-pub2_ip=$(multipass info pub2 | grep -i ip | awk '{print $2}')
+kubectl apply -f 01-mongo.yaml
+kubectl apply -f 01-konfig.yaml
+kubectl apply -f 02-publish.yaml
+kubectl apply -f 03-transcoder.yaml
+kubectl apply -f 04-restreamer.yaml
 
-rs1_ip=$(multipass info rs1 | grep -i ip | awk '{print $2}')
-rs2_ip=$(multipass info rs2 | grep -i ip | awk '{print $2}')
-
-echo "Publish to rtmp://${pub1_ip}/pub/streamname or rtmp://${pub2_ip}/pub/streamname"
-echo "Play http://${rs1_ip}/pub/streamname/index.m3u8 or http://${rs2_ip}/pub/streamname/index.m3u8"
 

@@ -1,21 +1,19 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: transcoder
+  name: restreamer
 spec:
-  serviceName: transcoder
+  serviceName: restreamer
   podManagementPolicy: Parallel
   replicas: 2
   selector:
     matchLabels:
-      app: transcoder
+      app: restreamer
   template:
     metadata:
       labels:
-        app: transcoder
+        app: restreamer
     spec:
-      nodeSelector:
-        cloud.flussonic.com/transcoder: "true"
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -24,16 +22,18 @@ spec:
               - key: app
                 operator: In
                 values:
-                - transcoder
+                - restreamer
             topologyKey: "kubernetes.io/hostname"
       serviceAccountName: in-api-call-sa
       containers:
       - name: flussonic
-        image: flussonic/flussonic:v22.10-124
+        image: flussonic/flussonic:v22.09-49
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
           name: http
+        - containerPort: 1935
+          name: rtmp
         env:
         - name: LICENSE_KEY
           valueFrom:
@@ -88,22 +88,32 @@ spec:
         configMap:
           name: streamer-presets
           items:
-          - key: transcoder
-            path: transcoder.conf
+          - key: restream
+            path: restream.conf
           - key: cluster_key
             path: cluster_key.conf
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: transcoder
-  labels:
-    app: transcoder
+  name: egress
+  annotations:
+
+    # https://docs.digitalocean.com/products/kubernetes/how-to/configure-load-balancers/
+    service.beta.kubernetes.io/do-loadbalancer-name: "egress-publish-lb-02"
+    service.beta.kubernetes.io/do-loadbalancer-enable-backend-keepalive: "true"
+    service.beta.kubernetes.io/do-loadbalancer-healthcheck-path: "/flussonic/api/whoami"
+    service.beta.kubernetes.io/do-loadbalancer-healthcheck-protocol: "http"
+    service.beta.kubernetes.io/do-loadbalancer-protocol: "http"
+    service.beta.kubernetes.io/do-loadbalancer-sticky-sessions-type: "cookies"
+    service.beta.kubernetes.io/do-loadbalancer-sticky-sessions-cookie-name: "player"
+    service.beta.kubernetes.io/do-loadbalancer-sticky-sessions-cookie-ttl: "60"
 spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app: restreamer
   ports:
   - port: 80
-    name: transcoder
-  clusterIP: None
-  selector:
-    app: transcoder
-
+    name: http
+    targetPort: http

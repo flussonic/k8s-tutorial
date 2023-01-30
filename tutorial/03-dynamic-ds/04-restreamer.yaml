@@ -1,36 +1,28 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: publish
+  name: restreamer
 spec:
   selector:
     matchLabels:
-      app: publish
+      app: restreamer
   template:
     metadata:
       labels:
-        app: publish
+        app: restreamer
     spec:
       nodeSelector:
-        cloud.flussonic.com/publish: "true"
+        cloud.flussonic.com/egress: "true"
       serviceAccountName: in-api-call-sa
       containers:
       - name: flussonic
         image: flussonic/flussonic:v22.10-124
         imagePullPolicy: IfNotPresent
         ports:
-        - name: http
-          containerPort: 80
+        - containerPort: 80
           hostPort: 80
-        - name: admin-http
-          containerPort: 81
-        - name: rtmp
-          containerPort: 1935
-          hostPort: 1935
+          name: http
         env:
-
-        # When we use daemonset, we want to have stable hostname on each node for licensing and routing issues
-        # so we override pod hostname with node hostname
         - name: FLUSSONIC_HOSTNAME
           valueFrom:
             fieldRef:
@@ -41,23 +33,22 @@ spec:
               name: flussonic-license
               key: license_key
               optional: false
+        - name: FLUSSONIC_CONFIG_EXTERNAL
+          value: "http://konfig.default.svc.cluster.local/restreamer"
         - name: FLUSSONIC_SECRETS_STORAGE
           value: "k8s://test-secret"
-        # - name: FLUSSONIC_HTTP
-        #   value: "80"
+        - name: FLUSSONIC_HTTP
+          value: "80"
         - name: FLUSSONIC_EDIT_AUTH
           valueFrom:
             secretKeyRef:
               name: test-secret
               key: edit_auth
               optional: false
-        volumeMounts:
-        - name: config-templates
-          mountPath: /etc/flussonic/flussonic.conf.d
         livenessProbe:
           httpGet:
             path: /flussonic/api/v3/monitoring/liveness
-            port: 81
+            port: 80
             httpHeaders:
             - name: Authorization
               value: Bearer cm9vdDpwYXNzd29yZA==
@@ -66,7 +57,7 @@ spec:
         startupProbe:
           httpGet:
             path: /flussonic/api/v3/monitoring/readiness
-            port: 81
+            port: 80
             httpHeaders:
             - name: Authorization
               value: Bearer cm9vdDpwYXNzd29yZA==
@@ -76,13 +67,12 @@ spec:
         readinessProbe:
           httpGet:
             path: /flussonic/api/v3/monitoring/readiness
-            port: 81
+            port: 80
             httpHeaders:
             - name: Authorization
               value: Bearer cm9vdDpwYXNzd29yZA==
           initialDelaySeconds: 3
           periodSeconds: 3
-
       volumes:
       - name: config-templates
         configMap:
@@ -90,9 +80,4 @@ spec:
           items:
           - key: listeners
             path: listeners.conf
-          - key: rtmp
-            path: rtmp.conf
-          - key: publish
-            path: publish.conf
-          - key: cluster_key
-            path: cluster_key.conf
+
