@@ -15,9 +15,10 @@ kubectl create secret generic mongo-logging --from-literal=dsn="mongodb://flus:s
 
 
 kubectl apply -f ../../lib/log2mongo/daemonset.yaml
+exit 0
 kubectl apply -f 00-secrets.yaml
 kubectl apply -f 01-mongo.yaml
 kubectl apply -f 01-konfig.yaml
-kubectl apply -f 02-publish-lb.yaml
+kubectl apply -f 02-publish.yaml
 kubectl apply -f 03-transcoder.yaml
 kubectl apply -f 04-restreamer.yaml

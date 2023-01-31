@@ -1,13 +1,13 @@
 #!/bin/sh
 
-set -exu
+set -ex
 
-if [ -z "$license_key" ]; then
-    read -p "Enter Flussonic license key: "  license_key
+if [ -z "$LICENSE_KEY" ]; then
+    read -p "Enter Flussonic license key: "  LICENSE_KEY
 fi
 
 doctl kubernetes cluster create publish-02 --count 6 --region ams3
-kubectl create secret generic flussonic-license --from-literal=license_key="${license_key}"
+kubectl create secret generic flussonic-license --from-literal=license_key="${LICENSE_KEY}"
 
 kubectl get node --no-headers | sort | sed -n '1,2 p' | awk '{print $1}' | while read node; do
     kubectl label nodes $node cloud.flussonic.com/publish=true

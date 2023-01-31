@@ -1,9 +1,9 @@
 #!/bin/sh
 
-set -exu
+set -ex
 
-if [ -z "$license_key" ]; then
-    read -p "Enter Flussonic license key: "  license_key
+if [ -z "$LICENSE_KEY" ]; then
+    read -p "Enter Flussonic license key: "  LICENSE_KEY
 fi
 
 multipass launch --name k3s --cpus 1 --mem 1024M --disk 5G focal
@@ -38,7 +38,7 @@ kubectl label nodes tc2 cloud.flussonic.com/transcoder=true
 kubectl label nodes rs1 cloud.flussonic.com/egress=true
 kubectl label nodes rs2 cloud.flussonic.com/egress=true
 
-kubectl create secret generic flussonic-license --from-literal=license_key="${license_key}"
+kubectl create secret generic flussonic-license --from-literal=license_key="${LICENSE_KEY}"
 kubectl create secret generic mongo-logging --from-literal=dsn="mongodb://flus:sonic@mongo.default.svc.cluster.local:27017/flussonic?authSource=admin"
 
 kubectl apply -f ../../lib/log2mongo/daemonset.yaml
@@ -55,3 +55,11 @@ kubectl apply -f 03-transcoder.yaml
 kubectl apply -f 04-restreamer.yaml
 
 
+pub1_ip=$(multipass info pub1 | grep -i ip | awk '{print $2}')
+pub2_ip=$(multipass info pub2 | grep -i ip | awk '{print $2}')
+
+rs1_ip=$(multipass info rs1 | grep -i ip | awk '{print $2}')
+rs2_ip=$(multipass info rs2 | grep -i ip | awk '{print $2}')
+
+echo "Publish: http://${pub1_ip}/ http://${pub2_ip}/"
+echo "Play: http://${rs1_ip}/ http://${rs2_ip}/"

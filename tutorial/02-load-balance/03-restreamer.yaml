@@ -16,7 +16,7 @@ spec:
       serviceAccountName: in-api-call-sa
       containers:
       - name: flussonic
-        image: flussonic/flussonic:v22.10-124
+        image: flussonic/flussonic:v23.01-257
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80

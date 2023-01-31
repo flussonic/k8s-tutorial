@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -exu
+set -ex
 
 if [ -z "$LICENSE_KEY" ]; then
     read -p "Enter Flussonic license key: "  LICENSE_KEY

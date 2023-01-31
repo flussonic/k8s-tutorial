@@ -163,3 +163,64 @@ service/publish-01 created
 Visit http://192.168.64.73/ server
 ```
 
+# Minikube setup
+
+Minikube is a favourite all-in-one mechanism that allows to test your kubernetes installation. We recommend to use multipass + k3s on your laptop, but some people prefer minikube.
+
+```
+$ ./mk-start.sh
+LICENSE_KEY="l4|..." ./mk-start.sh 
+😄  minikube v1.26.0 on Darwin 11.5.2 (arm64)
+🎉  minikube 1.29.0 is available! Download it: https://github.com/kubernetes/minikube/releases/tag/v1.29.0
+💡  To disable this notice, run: 'minikube config set WantUpdateNotification false'
+
+✨  Automatically selected the docker driver
+📌  Using Docker Desktop driver with root privileges
+👍  Starting control plane node minikube in cluster minikube
+🚜  Pulling base image ...
+💾  Downloading Kubernetes v1.24.1 preload ...
+    > preloaded-images-k8s-v18-v1...: 342.86 MiB / 342.86 MiB  100.00% 24.93 Mi
+🔥  Creating docker container (CPUs=2, Memory=4000MB) ...
+🐳  Preparing Kubernetes v1.24.1 on Docker 20.10.17 ...
+    ▪ Generating certificates and keys ...
+    ▪ Booting up control plane ...
+    ▪ Configuring RBAC rules ...
+🔎  Verifying Kubernetes components...
+    ▪ Using image gcr.io/k8s-minikube/storage-provisioner:v5
+🌟  Enabled addons: default-storageclass, storage-provisioner
+🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
+secret/flussonic-license created
+serviceaccount/in-api-call-sa created
+role.rbac.authorization.k8s.io/in-api-call-role created
+rolebinding.rbac.authorization.k8s.io/in-api-call-rb created
+configmap/streamer-presets created
+secret/test-secret created
+daemonset.apps/publish created
+service/publish-01 created
+|-----------|------------|-------------|---------------------------|
+| NAMESPACE |    NAME    | TARGET PORT |            URL            |
+|-----------|------------|-------------|---------------------------|
+| default   | publish-01 | http/80     | http://192.168.49.2:32655 |
+|           |            | rtmp/1935   | http://192.168.49.2:32310 |
+|-----------|------------|-------------|---------------------------|
+🏃  Starting tunnel for service publish-01.
+|-----------|------------|-------------|------------------------|
+| NAMESPACE |    NAME    | TARGET PORT |          URL           |
+|-----------|------------|-------------|------------------------|
+| default   | publish-01 |             | http://127.0.0.1:50201 |
+|           |            |             | http://127.0.0.1:50202 |
+|-----------|------------|-------------|------------------------|
+[default publish-01  http://127.0.0.1:50201
+http://127.0.0.1:50202]
+❗  Because you are using a Docker driver on darwin, the terminal needs to be open to run it.
+```
+
+Mention that on MacOS you need to leave this working to be able to access specified port.
+
+Better use multipass.
+
+```
+./mk-stop.sh
+```
+
+will clean everything.
