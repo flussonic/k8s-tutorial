@@ -1,11 +1,8 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: DaemonSet
 metadata:
   name: publish
 spec:
-  serviceName: publish
-  podManagementPolicy: Parallel
-  replicas: 2
   selector:
     matchLabels:
       app: publish
@@ -14,27 +11,30 @@ spec:
       labels:
         app: publish
     spec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - publish
-            topologyKey: "kubernetes.io/hostname"
+      nodeSelector:
+        cloud.flussonic.com/publish: "true"
       serviceAccountName: in-api-call-sa
       containers:
       - name: flussonic
-        image: flussonic/flussonic:v22.09-49
+        image: flussonic/flussonic:v23.01-257
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 80
-          name: http
-        - containerPort: 1935
-          name: rtmp
+        - name: http
+          containerPort: 80
+          hostPort: 80
+        - name: admin-http
+          containerPort: 81
+        - name: rtmp
+          containerPort: 1935
+          hostPort: 1935
         env:
+
+        # When we use daemonset, we want to have stable hostname on each node for licensing and routing issues
+        # so we override pod hostname with node hostname
+        - name: FLUSSONIC_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
         - name: LICENSE_KEY
           valueFrom:
             secretKeyRef:
@@ -43,8 +43,6 @@ spec:
               optional: false
         - name: FLUSSONIC_SECRETS_STORAGE
           value: "k8s://test-secret"
-        - name: FLUSSONIC_HTTP
-          value: "80"
         - name: FLUSSONIC_EDIT_AUTH
           valueFrom:
             secretKeyRef:
@@ -57,7 +55,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /flussonic/api/v3/monitoring/liveness
-            port: 80
+            port: 81
             httpHeaders:
             - name: Authorization
               value: Bearer cm9vdDpwYXNzd29yZA==
@@ -66,7 +64,7 @@ spec:
         startupProbe:
           httpGet:
             path: /flussonic/api/v3/monitoring/readiness
-            port: 80
+            port: 81
             httpHeaders:
             - name: Authorization
               value: Bearer cm9vdDpwYXNzd29yZA==
@@ -76,7 +74,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /flussonic/api/v3/monitoring/readiness
-            port: 80
+            port: 81
             httpHeaders:
             - name: Authorization
               value: Bearer cm9vdDpwYXNzd29yZA==
@@ -88,27 +86,11 @@ spec:
         configMap:
           name: streamer-presets
           items:
+          - key: listeners
+            path: listeners.conf
           - key: rtmp
             path: rtmp.conf
           - key: publish
             path: publish.conf
           - key: cluster_key
             path: cluster_key.conf
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ingress
-  annotations:
-    service.beta.kubernetes.io/do-loadbalancer-name: "ingress-publish-lb-02"
-spec:
-  type: LoadBalancer
-  selector:
-    app: publish
-  ports:
-  - port: 1935
-    name: rtmp
-    targetPort: rtmp
-  - port: 80
-    name: http
-    targetPort: http

@@ -42,7 +42,8 @@ kind: ConfigMap
 metadata:
   name: streamer-presets
 data:
-  ports: |
+  listeners: |
+    http 80;
     rtmp 1935;
   vod: |
     file vod {
@@ -63,32 +64,35 @@ data:
   edit_auth: cm9vdDpwYXNzd29yZA==
 ---
 apiVersion: apps/v1
-kind: StatefulSet
+kind: DaemonSet
 metadata:
-  name: flussonic
+  name: publish
 spec:
-  serviceName: flussonic
-  podManagementPolicy: Parallel
-  replicas: 1
   selector:
     matchLabels:
-      app: flussonic
+      app: publish
   template:
     metadata:
       labels:
-        app: flussonic
+        app: publish
     spec:
       serviceAccountName: in-api-call-sa
       containers:
       - name: flussonic
-        image: flussonic/flussonic:v22.09-49
+        image: flussonic/flussonic:v23.01-257
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 80
-          name: http
-        - containerPort: 1935
-          name: rtmp
+        - name: http
+          containerPort: 80
+          hostPort: 80
+        - name: rtmp
+          containerPort: 1935
+          hostPort: 1935
         env:
+        - name: FLUSSONIC_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
         - name: LICENSE_KEY
           valueFrom:
             secretKeyRef:
@@ -97,8 +101,6 @@ spec:
               optional: false
         - name: FLUSSONIC_SECRETS_STORAGE
           value: "k8s://test-secret"
-        - name: FLUSSONIC_HTTP
-          value: "80"
         - name: FLUSSONIC_EDIT_AUTH
           valueFrom:
             secretKeyRef:
@@ -142,8 +144,8 @@ spec:
         configMap:
           name: streamer-presets
           items:
-          - key: ports
-            path: ports.conf
+          - key: listeners
+            path: listeners.conf
           - key: vod
             path: vod.conf
           - key: publish

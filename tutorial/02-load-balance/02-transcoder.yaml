@@ -14,6 +14,8 @@ spec:
       labels:
         app: transcoder
     spec:
+      nodeSelector:
+        cloud.flussonic.com/transcoder: "true"
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -27,7 +29,7 @@ spec:
       serviceAccountName: in-api-call-sa
       containers:
       - name: flussonic
-        image: flussonic/flussonic:v22.09-49
+        image: flussonic/flussonic:v23.01-257
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
