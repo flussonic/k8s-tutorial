@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: central
+  labels:
+    name: central
+spec:
+  ports:
+  - port: 80
+    targetPort: 9000
+    name: central
+  selector:
+    app: central
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: central
+spec:
+  serviceName: central
+  replicas: 1
+  selector:
+    matchLabels:
+      app: central
+  template:
+    metadata:
+      labels:
+        app: central
+    spec:
+      serviceAccountName: in-api-call-sa
+      containers:
+      - name: central
+        image: flussonic/central:v23.06-99
+        ports:
+        - containerPort: 9000
+          hostPort: 9000
+        env:
+        - name: DATABASE_URL
+          value: postgres://test:test@postgres.default.svc.cluster.local:5432/test_c?sslmode=disable&search_path=central
+        - name: HTTP_PORT
+          value: "9000"
+        - name: API_KEY
+          value: apikey0
+        - name: EDIT_AUTH
+          value: "admin pass"
+        - name: API_URL
+          value: "http://central.default.svc.cluster.local"
+        # - name: UPSTREAM_URL
+        #   value: "http://nevada@watcher.default.svc.cluster.local"
+        # volumeMounts:
+        # - name: provision-streamers
+        #   mountPath: /usr/local/bin/provision-streamers.sh
+        #   readOnly: true
+      # volumes:
+      # - name: provision-streamers
+      #   hostPath:
+      #     path: ./provision-streamers.sh
+      #     type: File
+

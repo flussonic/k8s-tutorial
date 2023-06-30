@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: watcher
+  labels:
+    name: watcher
+spec:
+  ports:
+  - port: 80
+    targetPort: 9015
+    name: watcher
+  selector:
+    app: watcher
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: watcher
+spec:
+  serviceName: watcher
+  replicas: 1
+  selector:
+    matchLabels:
+      app: watcher
+  template:
+    metadata:
+      labels:
+        app: watcher
+    spec:
+      containers:
+      - name: watcher
+        image: flussonic/watcher:v23.04-35
+        ports:
+        - containerPort: 9015
+        env:
+        - name: DB
+          value: postgresql://test:test@db.default.svc.cluster.local:5432/test_c
+        - name: HTTP_PORT
+          value: "9000"
+        - name: API_KEY
+          value: apikey0
+        - name: EDIT_AUTH
+          value: "admin pass"
+        - name: API_URL
+          value: "http://central.default.svc.cluster.local0"
+        - name: UPSTREAM_URL
+          value: "http://nevada@watcher.default.svc.cluster.local"
+
