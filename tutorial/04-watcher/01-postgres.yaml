@@ -28,7 +28,7 @@ spec:
         app: postgres
     spec:
       nodeSelector:
-        watcher.flussonic.com/manage: "true"
+        flussonic.com/central: "true"
       containers:
       - name: postgres
         image: postgres:15.3

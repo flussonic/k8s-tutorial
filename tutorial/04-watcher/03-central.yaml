@@ -29,13 +29,13 @@ spec:
     spec:
       serviceAccountName: in-api-call-sa
       nodeSelector:
-        watcher.flussonic.com/manage: "true"
+        flussonic.com/central: "true"
       containers:
       - name: central
-        image: flussonic/central:v23.08-35-g26050d8
+        image: flussonic/central:v23.08-39
         ports:
         - containerPort: 9000
-          hostPort: 9000
+          hostPort: 80
         env:
         - name: DATABASE_URL
           value: postgres://test:test@postgres.default.svc.cluster.local:5432/test_c?search_path=central
@@ -63,7 +63,7 @@ spec:
           serviceAccountName: in-api-call-sa
           containers:
           - name: central-provisioner
-            image: flussonic/central:v23.08-35-g26050d8
+            image: flussonic/central:v23.08-39
             imagePullPolicy: IfNotPresent
             command:
             - /opt/central/bin/run.sh

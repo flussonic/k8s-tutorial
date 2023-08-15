@@ -27,22 +27,24 @@ spec:
       labels:
         app: watcher
     spec:
+      nodeSelector:
+        flussonic.com/watcher: "true"
       containers:
       - name: watcher
-        image: flussonic/watcher:v23.04-35
+        image: flussonic/watcher:v23.08-23
         ports:
         - containerPort: 9015
+          hostPort: 80
         env:
         - name: DB
-          value: postgresql://test:test@db.default.svc.cluster.local:5432/test_c
-        - name: HTTP_PORT
-          value: "9000"
-        - name: API_KEY
-          value: apikey0
-        - name: EDIT_AUTH
-          value: "admin pass"
-        - name: API_URL
-          value: "http://central.default.svc.cluster.local0"
-        - name: UPSTREAM_URL
-          value: "http://nevada@watcher.default.svc.cluster.local"
+          value: postgresql://test:test@postgres.default.svc.cluster.local:5432/test_c
+        - name: REDIS
+          value: redis://redis.default.svc.cluster.local:9017
+        - name: CENTRAL_URL
+          value: http://apikey0@central.default.svc.cluster.local/streamer/api/v3
+        - name: PORT
+          value: "9015"
+        - name: LISTEN_HOST
+          value: '0.0.0.0'
+
 

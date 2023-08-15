@@ -12,6 +12,9 @@ data:
     dvr central {
       root /storage;
     }
+    auth_backend vsaas {
+      backend http://watcher.default.svc.cluster.local/vsaas/api/camera_auth;
+    }
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -27,11 +30,11 @@ spec:
         app: streamer
     spec:
       nodeSelector:
-        watcher.flussonic.com/streamer: "true"
+        flussonic.com/streamer: "true"
       serviceAccountName: in-api-call-sa
       containers:
       - name: flussonic
-        image: flussonic/flussonic:v23.08.1-25
+        image: flussonic/flussonic:v23.08.1-28
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
