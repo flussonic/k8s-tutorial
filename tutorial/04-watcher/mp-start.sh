@@ -27,9 +27,9 @@ multipass exec streamer2 -- sudo /bin/sh -c "curl -sfL https://get.k3s.io | K3S_
 multipass exec manage sudo cat /etc/rancher/k3s/k3s.yaml |sed "s/127.0.0.1/${plane_ip}/" > k3s.yaml
 export KUBECONFIG=`pwd`/k3s.yaml
 
+kubectl label nodes manage watcher.flussonic.com/manage=true
 kubectl label nodes streamer1 watcher.flussonic.com/streamer=true
 kubectl label nodes streamer2 watcher.flussonic.com/streamer=true
-kubectl label nodes manage watcher.flussonic.com/manage=true
 
 kubectl create secret generic flussonic-license --from-literal=license_key="${LICENSE_KEY}"
 
@@ -37,7 +37,6 @@ kubectl apply -f 00-secrets.yaml
 kubectl apply -f 01-postgres.yaml
 kubectl apply -f 02-streamer.yaml
 kubectl apply -f 03-central.yaml
-# kubectl apply -f 02-publish.yaml
 
 
 watcher_ip=$(multipass info manage | grep -i ip | awk '{print $2}')

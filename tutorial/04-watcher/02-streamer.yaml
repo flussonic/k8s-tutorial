@@ -31,7 +31,7 @@ spec:
       serviceAccountName: in-api-call-sa
       containers:
       - name: flussonic
-        image: flussonic/flussonic:v23.06-168
+        image: flussonic/flussonic:v23.08.1-25
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
@@ -63,7 +63,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /flussonic/api/v3/monitoring/liveness
-            port: 80
+            port: 81
             httpHeaders:
             - name: Authorization
               value: Bearer cm9vdDpwYXNzd29yZA==
@@ -72,7 +72,7 @@ spec:
         startupProbe:
           httpGet:
             path: /flussonic/api/v3/monitoring/readiness
-            port: 80
+            port: 81
             httpHeaders:
             - name: Authorization
               value: Bearer cm9vdDpwYXNzd29yZA==
@@ -82,7 +82,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /flussonic/api/v3/monitoring/readiness
-            port: 80
+            port: 81
             httpHeaders:
             - name: Authorization
               value: Bearer cm9vdDpwYXNzd29yZA==

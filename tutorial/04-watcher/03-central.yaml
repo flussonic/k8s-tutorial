@@ -28,15 +28,17 @@ spec:
         app: central
     spec:
       serviceAccountName: in-api-call-sa
+      nodeSelector:
+        watcher.flussonic.com/manage: "true"
       containers:
       - name: central
-        image: flussonic/central:v23.06-99
+        image: flussonic/central:v23.08-35-g26050d8
         ports:
         - containerPort: 9000
           hostPort: 9000
         env:
         - name: DATABASE_URL
-          value: postgres://test:test@postgres.default.svc.cluster.local:5432/test_c?sslmode=disable&search_path=central
+          value: postgres://test:test@postgres.default.svc.cluster.local:5432/test_c?search_path=central
         - name: HTTP_PORT
           value: "9000"
         - name: API_KEY
@@ -45,15 +47,30 @@ spec:
           value: "admin pass"
         - name: API_URL
           value: "http://central.default.svc.cluster.local"
-        # - name: UPSTREAM_URL
-        #   value: "http://nevada@watcher.default.svc.cluster.local"
-        # volumeMounts:
-        # - name: provision-streamers
-        #   mountPath: /usr/local/bin/provision-streamers.sh
-        #   readOnly: true
-      # volumes:
-      # - name: provision-streamers
-      #   hostPath:
-      #     path: ./provision-streamers.sh
-      #     type: File
-
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: central-streamers-provisioner
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: in-api-call-sa
+          containers:
+          - name: central-provisioner
+            image: flussonic/central:v23.08-35-g26050d8
+            imagePullPolicy: IfNotPresent
+            command:
+            - /opt/central/bin/run.sh
+            - -p
+            env:
+            - name: CLUSTER_KEY
+              value: FxNtj8tU0olsD1
+            - name: API_KEY
+              value: apikey0
+          restartPolicy: OnFailure
